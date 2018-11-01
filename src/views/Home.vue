@@ -85,7 +85,9 @@
         </el-submenu>
       </el-menu>
     </el-aside>
-    <el-main class="main">Main</el-main>
+    <el-main class="main">
+      <router-view></router-view>
+    </el-main>
   </el-container>
 </el-container>
 </template>
@@ -101,7 +103,6 @@ export default {
       this.$router.push('/login')
       this.$message.warning('请先登录')
     }
-    
   },
   methods: {
     loginout () {
