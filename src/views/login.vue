@@ -10,11 +10,11 @@
     <el-input v-model="formdata.username"></el-input>
   </el-form-item>
   <el-form-item label="密码">
-    <el-input v-model="formdata.password"></el-input>
+    <el-input type="password" v-model="formdata.password"></el-input>
   </el-form-item>
   <el-button
     class="login-button"
-    type="primary">主要按钮</el-button>
+    type="primary" @click.prevent="handleLoginin()">登录</el-button>
 </el-form>
 </div>
 </template>
@@ -26,6 +26,20 @@ export default {
       formdata: {
         username: '',
         password: ''
+      }
+    }
+  },
+  methods: {
+    async handleLoginin () {
+      const res = await this.$http.post('login', this.formdata)
+      const {meta} = res.data
+      if (meta.status === 200) {
+        const token = res.data.data.token
+        sessionStorage.setItem('token', token)
+        this.$router.push('/')
+        this.$message.success(meta.msg)
+      } else {
+        this.$message.success(meta.msg)
       }
     }
   }
