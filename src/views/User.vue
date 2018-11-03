@@ -42,8 +42,50 @@
       </el-form-item>
     </el-form>
     <div slot="footer" class="dialog-footer">
-      <el-button @click="dialogFormVisible = false">取 消</el-button>
+      <el-button @click="dialogFormVisibleAdduser = false">取 消</el-button>
       <el-button type="primary" @click="addUser()">确 定</el-button>
+    </div>
+  </el-dialog>
+  <!-- 编辑用户的对话框 -->
+  <el-dialog title="编辑用户" :visible.sync="dialogFormVisibleEdituser">
+    <el-form :model="formData">
+      <el-form-item label="用户名" :label-width="formLabelWidth">
+        <el-input disabled v-model="formData.username" autocomplete="off"></el-input>
+      </el-form-item>
+      <el-form-item label="邮箱" :label-width="formLabelWidth">
+        <el-input v-model="formData.email" autocomplete="off"></el-input>
+      </el-form-item>
+      <el-form-item label="电话" :label-width="formLabelWidth">
+        <el-input v-model="formData.mobile" autocomplete="off"></el-input>
+      </el-form-item>
+    </el-form>
+    <div slot="footer" class="dialog-footer">
+      <el-button @click="dialogFormVisibleEdituser = false">取 消</el-button>
+      <el-button type="primary" @click="editUser">确 定</el-button>
+    </div>
+  </el-dialog>
+  <!-- 分配权限对话框 -->
+  <el-dialog title="分配角色" :visible.sync="dialogFormVisibleSetrole">
+    <el-form :model="formData">
+      <el-form-item label="用户名" :label-width="formLabelWidth">
+        {{currUserName}}
+      </el-form-item>
+      <el-form-item label="角色" :label-width="formLabelWidth">
+          <el-select v-model="currRoleId">
+            <el-option disabled label="请选择" :value="-1">
+            </el-option>
+            <el-option
+              v-for="(item, index) in roles"
+              :key="index"
+              :value="item.id"
+              :label="item.roleName">
+            </el-option>
+          </el-select>
+      </el-form-item>
+    </el-form>
+    <div slot="footer" class="dialog-footer">
+      <el-button @click="dialogFormVisibleSetrole = false">取 消</el-button>
+      <el-button type="primary" @click="setRole()">确 定</el-button>
     </div>
   </el-dialog>
   <!-- 表格 -->
@@ -94,9 +136,9 @@
       label="操作"
       width="140">
       <template slot-scope="scope">
-        <el-button type="primary" icon="el-icon-edit" size="mini" plain circle @click="showEditBox()"></el-button>
+        <el-button type="primary" icon="el-icon-edit" size="mini" plain circle @click="showEditBox(scope.row.id)"></el-button>
         <el-button type="danger" icon="el-icon-delete" size="mini" plain circle @click="showDeleBox(scope.row.id)"></el-button>
-        <el-button type="success" icon="el-icon-check" size="mini" plain circle></el-button>
+        <el-button type="success" icon="el-icon-check" size="mini" plain circle @click="showRoleBox(scope.row)"></el-button>
       </template>
     </el-table-column>
   </el-table>
@@ -132,7 +174,12 @@ export default {
         mobile: ''
       },
       formLabelWidth: '100px',
-      dialogFormVisibleEdituser: false
+      dialogFormVisibleEdituser: false,
+      dialogFormVisibleSetrole: false,
+      currUserName: '',
+      currRoleId: -1,
+      roles: [],
+      currUserId: -1
     }
   },
   created () {
@@ -222,8 +269,44 @@ export default {
       }
     },
     // 编辑用户(显示对话框)
-    showEditBox () {
+    async showEditBox (userId) {
       this.dialogFormVisibleEdituser = true
+      const res = await this.$http.get(`users/${userId}`)
+      this.formData = res.data.data
+    },
+    // 编辑用户完成请求
+    async editUser () {
+      this.dialogFormVisibleEdituser = false
+      const res = await this.$http.put(`users/${this.formData.id}`, this.formData)
+      const {meta: {msg, status}} = res.data
+      if (status === 200) {
+        this.$message.success(msg)
+      }
+      this.loadTableData()
+      this.formData = {}
+    },
+    // 分配用户权限 显示对话
+    async showRoleBox (user) {
+      this.currUserId = user.id
+      this.dialogFormVisibleSetrole = true
+      this.currUserName = user.username
+      const res = await this.$http.get('roles')
+      const res2 = await this.$http.get(`users/${user.id}`)
+      this.currUserId =res2.data.data.rid
+      this.roles = res.data.data
+    },
+    // 分配权限发送请求
+    async setRole () {
+
+      const res = await this.$http.put(`users/${this.currUserId}/role`, {
+        rid: this.currUserId
+      })
+      const {meta: {status, msg}} = res.data
+      if (status === 200) {
+        this.$message.success(msg)
+      }
+      this.dialogFormVisibleSetrole = false
+      this.currRoleId = -1
     }
   }
 }
